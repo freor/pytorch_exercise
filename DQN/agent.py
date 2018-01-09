@@ -84,10 +84,10 @@ class Agent(object):
 	def minibatch_train(self):
 		state, next_state, reward, terminal = self.rmemory.minibatch(MINIBATCH_SIZE) # list
 
-		max_qvalue = self.dqn.target_Q_value(next_state)
+		max_qvalue = reward + GAMMA * self.dqn.target_Q_value(next_state)
 		qvalue = self.dqn.cnetwork(state)
 
-		loss = np.sqrt(reward + GAMMA * max_qvalue - qvalue)
+		loss = F.smooth_l1_loss(qvalue, max_qvalue)
 
 		self.optimizer.zero_grad()
 		loss.backward()
