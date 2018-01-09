@@ -1,8 +1,12 @@
 from collections import deque
 import randoms
 
+import option as op
+
+
 class ReplayMemory(object):
 
+	'''
 	def __init__(self):
 		self.memory = deque(maxlen=1000)
 
@@ -20,3 +24,4 @@ class ReplayMemory(object):
 			contents += [self.memory[i]]
 
 		return contents
+	'''
