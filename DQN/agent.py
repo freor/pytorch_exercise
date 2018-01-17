@@ -18,7 +18,6 @@ class Agent(object):
 
 	def __init__(self):
 		self.global_step = 0
-		#self.epsilon = 0.9
 		self.env = Environment()
 		self.rmemory = ReplayMemory()
 		self.dqn = DQN()
@@ -60,11 +59,7 @@ class Agent(object):
 
 				action = self.select_action(state, False)
 				next_state, reward, terminal, _ = self.env.act(action)
-				#pdb.set_trace()
 				episode_reward += reward
-
-				if terminal is True and episode_reward < 200:
-					reward = -1
 
 				self.rmemory.add([state, action, next_state, reward, terminal])
                 
@@ -126,32 +121,24 @@ class Agent(object):
 		# if rmemroy size is less than minibatch size, then not train.
 		if self.rmemory.size < op.MINIBATCH_SIZE or self.rmemory.size < op.learn_start:
 			return
-		#pdb.set_trace()
+
 		state, action, next_state, reward, terminal = self.rmemory.minibatch(op.MINIBATCH_SIZE) # numpy
 		yj = Variable(torch.cuda.FloatTensor(deepcopy(reward).tolist()))
 		_next_state = Variable(torch.cuda.FloatTensor(next_state.tolist()))
 		_t = terminal * 1.0
 		_t = Variable(torch.cuda.FloatTensor(terminal.tolist()))
-		_yj = self.target.max_qvalue(_next_state) * (- _t + 1.0) * op.GAMMA#torch.mul(self.target.max_qvalue(_next_state), _t)
+		_yj = self.target.max_qvalue(_next_state) * (- _t + 1.0) * op.GAMMA
 		yj = _yj + yj
         
-		state = Variable(torch.cuda.FloatTensor(state.tolist()))#, volatile=True)#Variable(torch.cuda.FloatTensor(state.tolist()), volatile=True)
+		state = Variable(torch.cuda.FloatTensor(state.tolist()))
 		action = Variable(torch.cuda.LongTensor(action.tolist())).view(-1, 1)
 		qvalue = self.dqn.action_qvalue(state, action).view(-1)
-		#pdb.set_trace()
-		loss = yj.sub(qvalue).pow(2)
-		# TODO: 문제: (32) - (32x1) => (32x32) so, the loss is 600, in normal the loss is 1.01.
-		loss = loss.mean()
-		#loss = self.criterion(qvalue, yj)
-        
-		#loss = F.smooth_l1_loss(qvalue, yj, size_average=False)
 
+		loss = yj.sub(qvalue).pow(2)
+		# PAST PROBLEM: (32) - (32x1) => (32x32) so, the loss is 600, in normal the loss is 1.01.
+		loss = loss.mean()
 		self.optimizer.zero_grad()
 		loss.backward()
-		'''
-		for param in self.dqn.parameters():
-			param.grad.data.clamp_(-1, 1)
-		'''
 
 		self.optimizer.step()
 

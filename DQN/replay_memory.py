@@ -33,7 +33,7 @@ class ReplayMemory(object):
 		next_state = contents[:, 2]
 		reward = contents[:, 3]
 		terminal = contents[:, 4]
-		#pdb.set_trace()
+		
 		return state, action, next_state, reward, terminal
 
 	@property
