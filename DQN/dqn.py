@@ -7,19 +7,56 @@ import torch.nn.init as init
 
 import numpy as np
 
-import option as op
+from option import *
 
-
-class QNetwork(object):
+'''
+class QNetwork(nn.Module):
 
 	def __init__(self):
+		super(QNetwork, self).__init__()
 
 		# inputs: state
 		# outputs: action
 
-		self.fc1 = nn.Linear(op.state_num, 60)
+		self.fc1 = nn.Linear(op.STATE_NUM, 60)
 		self.fc2 = nn.Linear(60, 30)
-		self.fc3 = nn.Linear(30, op.action_num)
+		self.fc3 = nn.Linear(30, op.ACTION_NUM)
+		
+		init.xavier_uniform(self.fc1.weight)
+		init.xavier_uniform(self.fc2.weight)
+		init.xavier_uniform(self.fc3.weight)
+
+		init.constant(self.fc1.bias, 0)
+		init.constant(self.fc2.bias, 0)
+		init.constant(self.fc3.bias, 0)
+
+		self.softmax = nn.Softmax()
+
+	def foward(self, x):
+		# inputs: state
+		# outputs: action
+
+		x = F.relu(self.fc1(x))
+		x = F.relu(self.fc2(x))
+		x = self.fc3(x)
+
+		logits = x
+		prob = self.softmax(logits)
+
+		return logits, prob
+'''
+
+class DQN(nn.Module):
+
+	def __init__(self):
+		super(DQN, self).__init__()
+
+		# inputs: state
+		# outputs: action
+
+		self.fc1 = nn.Linear(op.STATE_NUM, op.HIDDEN1)
+		self.fc2 = nn.Linear(op.HIDDEN1, op.HIDDEN2)
+		self.fc3 = nn.Linear(op.HIDDEN2, op.ACTION_NUM)
 		
 		init.xavier_uniform(self.fc1.weight)
 		init.xavier_uniform(self.fc2.weight)
@@ -44,24 +81,28 @@ class QNetwork(object):
 
 		return logits, prob
 
-class DQN(object):
+	def max_action(self, state):
 
-	def __init__(self):
-		self.cnetwork = QNetwork()
-		self.tnetwork = QNetwork()
+		_, prob = self.foward(state)
 
-	def network_action(self, state):
+		_, index = torch.max(prob, 1)
 
-		_, prob = self.cnetwork(state)
+		return index.cpu().data[0]
 
-		return np.argmax(prob)
+	def max_qvalue(self, state):
 
-	def target_Q_value(self, state):
+		logits, _ = self.foward(state)
 
-		logits, _ = self.tnetwork(state)
+		m, _ = torch.max(logits, 1)
 
-		return np.max(logits)
+		return m
 
+	def action_qvalue(self, state, action):
+        
+		logits, _ = self.foward(state)
+        
+		a_qvalue = logits.gather(1, action)
+        
+		return a_qvalue
 
-
-
+        

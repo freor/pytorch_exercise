@@ -7,7 +7,7 @@ class Environment(object):
 		self.state = self.env.reset()
 
 	def random_action(self):
-		return env.action_space.sample()
+		return self.env.action_space.sample()
 
 	def new_episode(self):
 		self.state = self.env.reset()
@@ -16,4 +16,5 @@ class Environment(object):
 
 	def act(self, action):
 		# next_state, reward, terminal, info
-		return env.step(action)
+		return self.env.step(action)
+
